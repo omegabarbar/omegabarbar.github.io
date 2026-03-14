@@ -8,9 +8,7 @@
 
 <style>
 
-*{
-box-sizing:border-box;
-}
+*{box-sizing:border-box;}
 
 body{
 font-family:Arial;
@@ -129,19 +127,6 @@ font-weight:bold;
 .plus{color:#00e676;}
 .minus{color:#ff5252;}
 
-@media (max-width:500px){
-
-input[type=number]{
-width:50px;
-font-size:15px;
-}
-
-.player{
-width:65px;
-}
-
-}
-
 </style>
 </head>
 
@@ -155,11 +140,9 @@ MATA :
 </div>
 
 <div class="topbar">
-
 <button class="kick" onclick="kick()">KICK</button>
 <button class="download" onclick="downloadScore()">DOWNLOAD</button>
 <button class="reset" onclick="resetGame()">RESET</button>
-
 </div>
 
 <div id="tables" class="board"></div>
@@ -221,7 +204,6 @@ html+=`</tr>
 </tfoot></table>`
 
 container.innerHTML=html
-
 document.getElementById("tables").appendChild(container)
 
 hitung(id)
@@ -240,7 +222,6 @@ return sign+"Rp "+num.toLocaleString("id-ID")
 function hitung(id){
 
 let table=document.getElementById("table"+id)
-
 let total=[0,0,0,0]
 
 for(let i=1;i<=rounds;i++){
@@ -276,9 +257,7 @@ bayar+=(total[j]-total[i])
 bayar*=mata
 
 let cell=document.getElementById(`b${id}_${i}`)
-
 cell.innerText=formatRupiah(bayar)
-
 cell.className=bayar<0?"minus":"plus"
 
 }
@@ -288,7 +267,6 @@ cell.className=bayar<0?"minus":"plus"
 function kick(){
 
 let tables=document.querySelectorAll("table")
-
 let last=tables[tables.length-1]
 
 let totals=[]
@@ -308,8 +286,10 @@ saveGame()
 
 function resetGame(){
 
+if(confirm("Reset semua score?")){
 localStorage.removeItem("capsahScore")
 location.reload()
+}
 
 }
 
@@ -317,8 +297,42 @@ function saveGame(){
 
 let data={
 mata:document.getElementById("mata").value,
-html:document.getElementById("tables").innerHTML
+tables:[]
 }
+
+let tables=document.querySelectorAll("table")
+
+tables.forEach((table)=>{
+
+let names=[]
+table.querySelectorAll(".player").forEach(p=>{
+names.push(p.value)
+})
+
+let scores=[]
+
+for(let r=1;r<=rounds;r++){
+
+let row=[]
+let tr=table.rows[r]
+
+for(let c=1;c<=players;c++){
+
+let val=tr.cells[c].children[0].value
+row.push(val)
+
+}
+
+scores.push(row)
+
+}
+
+data.tables.push({
+names:names,
+scores:scores
+})
+
+})
 
 localStorage.setItem("capsahScore",JSON.stringify(data))
 
@@ -336,14 +350,37 @@ return
 data=JSON.parse(data)
 
 document.getElementById("mata").value=data.mata
-document.getElementById("tables").innerHTML=data.html
+document.getElementById("tables").innerHTML=""
+
+data.tables.forEach((set,index)=>{
+
+buatTabel(index,[0,0,0,0],set.names)
+
+let table=document.getElementById("table"+index)
+
+for(let r=1;r<=rounds;r++){
+
+for(let c=1;c<=players;c++){
+
+let val=set.scores[r-1][c-1]
+
+if(val!=""){
+table.rows[r].cells[c].children[0].value=val
+}
+
+}
+
+}
+
+hitung(index)
+
+})
 
 }
 
 function downloadScore(){
 
 let tables=document.querySelectorAll("table")
-
 let csv="CAPSAH SCOREBOARD\n\n"
 
 tables.forEach((table,index)=>{
@@ -359,13 +396,11 @@ let cols=row.querySelectorAll("td,th,input")
 let rowData=[]
 
 cols.forEach(col=>{
-
 if(col.tagName=="INPUT"){
 rowData.push(col.value)
 }else{
 rowData.push(col.innerText)
 }
-
 })
 
 csv+=rowData.join(",")+"\n"
@@ -377,13 +412,10 @@ csv+="\n"
 })
 
 let blob=new Blob([csv],{type:"text/csv"})
-
 let link=document.createElement("a")
 
 link.href=URL.createObjectURL(blob)
-
 link.download="capsah_scoreboard.csv"
-
 link.click()
 
 }
