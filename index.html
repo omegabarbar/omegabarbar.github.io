@@ -1,22 +1,396 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="id">
 <head>
-<title>Omega WebSite</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Capsah Scoreboard</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial;
+background:#0f1720;
+color:white;
+margin:0;
+padding:15px;
+}
+
+h1{
+text-align:center;
+font-size:22px;
+margin-bottom:10px;
+}
+
+.topbar{
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+justify-content:center;
+margin-bottom:15px;
+}
+
+button{
+padding:12px;
+border:none;
+border-radius:8px;
+font-weight:bold;
+font-size:14px;
+cursor:pointer;
+flex:1;
+min-width:90px;
+}
+
+.kick{background:#ff9800;color:white;}
+.reset{background:#f44336;color:white;}
+.download{background:#4caf50;color:white;}
+
+.mataBox{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:8px;
+margin-bottom:15px;
+}
+
+.mata{
+width:90px;
+padding:10px;
+font-size:16px;
+text-align:center;
+border-radius:6px;
+border:none;
+}
+
+.board{
+display:flex;
+flex-direction:column;
+gap:20px;
+}
+
+.tableBox{
+background:#1b2430;
+padding:10px;
+border-radius:10px;
+overflow-x:auto;
+}
+
+table{
+border-collapse:collapse;
+min-width:500px;
+width:100%;
+}
+
+th{
+background:#111827;
+padding:8px;
+font-size:14px;
+position:sticky;
+top:0;
+}
+
+td{
+border-top:1px solid #333;
+padding:4px;
+text-align:center;
+}
+
+input[type=number]{
+width:55px;
+padding:6px;
+font-size:16px;
+text-align:center;
+background:#111827;
+color:white;
+border:none;
+border-radius:4px;
+}
+
+.player{
+width:70px;
+font-weight:bold;
+background:#111827;
+color:white;
+border:none;
+padding:6px;
+border-radius:4px;
+text-align:center;
+}
+
+tfoot{
+background:#111827;
+font-weight:bold;
+}
+
+.plus{color:#00e676;}
+.minus{color:#ff5252;}
+
+@media (max-width:500px){
+
+input[type=number]{
+width:50px;
+font-size:15px;
+}
+
+.player{
+width:65px;
+}
+
+}
+
+</style>
 </head>
 
 <body>
-<center>
-<h1>
-Mohon tunggu sebentar...
-</h1>
-</center>
+
+<h1>♠️CAPSAH SCOREBOARD♠️</h1>
+
+<div class="mataBox">
+MATA :
+<input id="mata" class="mata" type="number" value="200" oninput="saveGame()">
+</div>
+
+<div class="topbar">
+
+<button class="kick" onclick="kick()">KICK</button>
+<button class="download" onclick="downloadScore()">DOWNLOAD</button>
+<button class="reset" onclick="resetGame()">RESET</button>
+
+</div>
+
+<div id="tables" class="board"></div>
 
 <script>
-setTimeout(() => {
-window.location.href = "http://"+location.hostname+"/main.html"
-}, 3000)
+
+let players=4
+let rounds=25
+
+function buatTabel(id,start=[0,0,0,0],names=["P1","P2","P3","P4"]){
+
+let container=document.createElement("div")
+container.className="tableBox"
+
+let html=`<h3>SET ${id+1}</h3>`
+
+html+=`<table id="table${id}">
+<thead>
+<tr>
+<th>Rnd</th>`
+
+for(let i=0;i<players;i++){
+html+=`<th><input class="player" value="${names[i]}" onchange="saveGame()"></th>`
+}
+
+html+=`</tr></thead><tbody>`
+
+for(let r=1;r<=rounds;r++){
+
+html+=`<tr><td>${r}</td>`
+
+for(let p=0;p<players;p++){
+html+=`<td><input type="number" oninput="hitung(${id});saveGame()"></td>`
+}
+
+html+=`</tr>`
+}
+
+html+=`</tbody><tfoot>
+
+<tr>
+<td>Total</td>`
+
+for(let p=0;p<players;p++){
+html+=`<td id="p${id}_${p}">${start[p]}</td>`
+}
+
+html+=`</tr>
+
+<tr>
+<td>IDR</td>`
+
+for(let p=0;p<players;p++){
+html+=`<td id="b${id}_${p}">Rp 0</td>`
+}
+
+html+=`</tr>
+
+</tfoot></table>`
+
+container.innerHTML=html
+
+document.getElementById("tables").appendChild(container)
+
+hitung(id)
+
+}
+
+function formatRupiah(num){
+
+let sign=num<0?"-":""
+num=Math.abs(num)
+
+return sign+"Rp "+num.toLocaleString("id-ID")
+
+}
+
+function hitung(id){
+
+let table=document.getElementById("table"+id)
+
+let total=[0,0,0,0]
+
+for(let i=1;i<=rounds;i++){
+
+let row=table.rows[i]
+
+for(let j=1;j<=players;j++){
+
+let val=row.cells[j].children[0].value
+
+if(val!=""){
+total[j-1]+=parseInt(val)
+}
+
+}
+
+}
+
+let mata=parseInt(document.getElementById("mata").value)||0
+
+for(let i=0;i<players;i++){
+
+document.getElementById(`p${id}_${i}`).innerText=total[i]
+
+let bayar=0
+
+for(let j=0;j<players;j++){
+if(i!=j){
+bayar+=(total[j]-total[i])
+}
+}
+
+bayar*=mata
+
+let cell=document.getElementById(`b${id}_${i}`)
+
+cell.innerText=formatRupiah(bayar)
+
+cell.className=bayar<0?"minus":"plus"
+
+}
+
+}
+
+function kick(){
+
+let tables=document.querySelectorAll("table")
+
+let last=tables[tables.length-1]
+
+let totals=[]
+let names=[]
+
+for(let i=0;i<players;i++){
+totals.push(parseInt(last.querySelector(`#p${tables.length-1}_${i}`).innerText))
+}
+
+last.querySelectorAll(".player").forEach(e=>names.push(e.value))
+
+buatTabel(tables.length,totals,names)
+
+saveGame()
+
+}
+
+function resetGame(){
+
+localStorage.removeItem("capsahScore")
+location.reload()
+
+}
+
+function saveGame(){
+
+let data={
+mata:document.getElementById("mata").value,
+html:document.getElementById("tables").innerHTML
+}
+
+localStorage.setItem("capsahScore",JSON.stringify(data))
+
+}
+
+function loadGame(){
+
+let data=localStorage.getItem("capsahScore")
+
+if(!data){
+buatTabel(0)
+return
+}
+
+data=JSON.parse(data)
+
+document.getElementById("mata").value=data.mata
+document.getElementById("tables").innerHTML=data.html
+
+}
+
+function downloadScore(){
+
+let tables=document.querySelectorAll("table")
+
+let csv="CAPSAH SCOREBOARD\n\n"
+
+tables.forEach((table,index)=>{
+
+csv+="SET "+(index+1)+"\n"
+
+let rows=table.querySelectorAll("tr")
+
+rows.forEach(row=>{
+
+let cols=row.querySelectorAll("td,th,input")
+
+let rowData=[]
+
+cols.forEach(col=>{
+
+if(col.tagName=="INPUT"){
+rowData.push(col.value)
+}else{
+rowData.push(col.innerText)
+}
+
+})
+
+csv+=rowData.join(",")+"\n"
+
+})
+
+csv+="\n"
+
+})
+
+let blob=new Blob([csv],{type:"text/csv"})
+
+let link=document.createElement("a")
+
+link.href=URL.createObjectURL(blob)
+
+link.download="capsah_scoreboard.csv"
+
+link.click()
+
+}
+
+loadGame()
+
 </script>
 
 </body>
-
 </html>
