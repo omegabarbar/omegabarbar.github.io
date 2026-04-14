@@ -43,22 +43,20 @@ flex:1;
 min-width:90px;
 }
 
-.kick{background:#ff9800;color:white;}
-.reset{background:#f44336;color:white;}
-.download{background:#4caf50;color:white;}
+.kick{background:#ff9800;}
+.reset{background:#f44336;}
+.download{background:#4caf50;}
 
 .mataBox{
 display:flex;
-align-items:center;
 justify-content:center;
-gap:8px;
 margin-bottom:15px;
+gap:10px;
 }
 
 .mata{
 width:90px;
 padding:10px;
-font-size:16px;
 text-align:center;
 border-radius:6px;
 border:none;
@@ -68,6 +66,7 @@ border:none;
 display:flex;
 flex-direction:column;
 gap:20px;
+width:100%;
 }
 
 .tableBox{
@@ -75,18 +74,19 @@ background:#1b2430;
 padding:10px;
 border-radius:10px;
 overflow-x:auto;
+width:100%;
+-webkit-overflow-scrolling:touch;
 }
 
 table{
 border-collapse:collapse;
-min-width:500px;
-width:100%;
+min-width:420px;
+width:max-content;
 }
 
 th{
 background:#111827;
 padding:8px;
-font-size:14px;
 position:sticky;
 top:0;
 }
@@ -98,30 +98,23 @@ text-align:center;
 }
 
 input[type=number]{
-width:55px;
+width:50px;
 padding:6px;
-font-size:16px;
-text-align:center;
 background:#111827;
 color:white;
 border:none;
 border-radius:4px;
+text-align:center;
 }
 
 .player{
-width:70px;
-font-weight:bold;
+width:60px;
 background:#111827;
 color:white;
 border:none;
 padding:6px;
 border-radius:4px;
 text-align:center;
-}
-
-tfoot{
-background:#111827;
-font-weight:bold;
 }
 
 .plus{color:#00e676;}
@@ -152,7 +145,7 @@ MATA :
 let players=4
 let rounds=25
 
-function buatTabel(id,start=[0,0,0,0],names=["P1","P2","P3","P4"]){
+function buatTabel(id,start=[0,0,0,0],names=["P1","P2","P3","P4"],carry=[0,0,0,0]){
 
 let container=document.createElement("div")
 container.className="tableBox"
@@ -160,9 +153,7 @@ container.className="tableBox"
 let html=`<h3>SET ${id+1}</h3>`
 
 html+=`<table id="table${id}">
-<thead>
-<tr>
-<th>Rnd</th>`
+<thead><tr><th>Rnd</th>`
 
 for(let i=0;i<players;i++){
 html+=`<th><input class="player" value="${names[i]}" onchange="saveGame()"></th>`
@@ -171,34 +162,25 @@ html+=`<th><input class="player" value="${names[i]}" onchange="saveGame()"></th>
 html+=`</tr></thead><tbody>`
 
 for(let r=1;r<=rounds;r++){
-
 html+=`<tr><td>${r}</td>`
-
 for(let p=0;p<players;p++){
 html+=`<td><input type="number" oninput="hitung(${id});saveGame()"></td>`
 }
-
 html+=`</tr>`
 }
 
 html+=`</tbody><tfoot>
 
-<tr>
-<td>Total</td>`
-
+<tr><td>Total</td>`
 for(let p=0;p<players;p++){
-html+=`<td id="p${id}_${p}">${start[p]}</td>`
+html+=`<td id="p${id}_${p}" data-carry="${carry[p]}">${start[p]}</td>`
 }
-
 html+=`</tr>
 
-<tr>
-<td>IDR</td>`
-
+<tr><td>IDR</td>`
 for(let p=0;p<players;p++){
 html+=`<td id="b${id}_${p}">Rp 0</td>`
 }
-
 html+=`</tr>
 
 </tfoot></table>`
@@ -211,43 +193,39 @@ hitung(id)
 }
 
 function formatRupiah(num){
-
 let sign=num<0?"-":""
 num=Math.abs(num)
-
 return sign+"Rp "+num.toLocaleString("id-ID")
-
 }
 
 function hitung(id){
 
 let table=document.getElementById("table"+id)
 let total=[0,0,0,0]
+let carry=[]
+
+for(let i=0;i<players;i++){
+let el=document.getElementById(`p${id}_${i}`)
+carry[i]=parseInt(el.dataset.carry)||0
+}
 
 for(let i=1;i<=rounds;i++){
-
 let row=table.rows[i]
-
 for(let j=1;j<=players;j++){
-
 let val=row.cells[j].children[0].value
-
 if(val!=""){
 total[j-1]+=parseInt(val)
 }
-
 }
-
 }
 
 let mata=parseInt(document.getElementById("mata").value)||0
 
 for(let i=0;i<players;i++){
 
-document.getElementById(`p${id}_${i}`).innerText=total[i]
+document.getElementById(`p${id}_${i}`).innerText=total[i]+carry[i]
 
 let bayar=0
-
 for(let j=0;j<players;j++){
 if(i!=j){
 bayar+=(total[j]-total[i])
@@ -278,19 +256,17 @@ totals.push(parseInt(last.querySelector(`#p${tables.length-1}_${i}`).innerText))
 
 last.querySelectorAll(".player").forEach(e=>names.push(e.value))
 
-buatTabel(tables.length,totals,names)
+buatTabel(tables.length,totals,names,totals)
 
 saveGame()
 
 }
 
 function resetGame(){
-
-if(confirm("Reset semua score?")){
+if(confirm("Reset semua data?")){
 localStorage.removeItem("capsahScore")
 location.reload()
 }
-
 }
 
 function saveGame(){
@@ -312,25 +288,20 @@ names.push(p.value)
 let scores=[]
 
 for(let r=1;r<=rounds;r++){
-
 let row=[]
 let tr=table.rows[r]
-
 for(let c=1;c<=players;c++){
-
-let val=tr.cells[c].children[0].value
-row.push(val)
-
+row.push(tr.cells[c].children[0].value)
 }
-
 scores.push(row)
-
 }
 
-data.tables.push({
-names:names,
-scores:scores
-})
+let carry=[]
+for(let i=0;i<players;i++){
+carry.push(parseInt(table.querySelector(`#p${tables.length-1}_${i}`)?.dataset?.carry||0))
+}
+
+data.tables.push({names,scores,carry})
 
 })
 
@@ -354,22 +325,17 @@ document.getElementById("tables").innerHTML=""
 
 data.tables.forEach((set,index)=>{
 
-buatTabel(index,[0,0,0,0],set.names)
+buatTabel(index,[0,0,0,0],set.names,set.carry||[0,0,0,0])
 
 let table=document.getElementById("table"+index)
 
 for(let r=1;r<=rounds;r++){
-
 for(let c=1;c<=players;c++){
-
 let val=set.scores[r-1][c-1]
-
 if(val!=""){
 table.rows[r].cells[c].children[0].value=val
 }
-
 }
-
 }
 
 hitung(index)
@@ -392,7 +358,6 @@ let rows=table.querySelectorAll("tr")
 rows.forEach(row=>{
 
 let cols=row.querySelectorAll("td,th,input")
-
 let rowData=[]
 
 cols.forEach(col=>{
@@ -423,12 +388,6 @@ link.click()
 loadGame()
 
 </script>
-      
-<p style="text-align: center;color: white;">
-      Copyright © 2026 Web Masih dalam pengembangan jika ada masalah / saran fitur bisa hubungi kontak di bawah, Terima kasih sudah memakai web ini <a href="https://instagram.com/joward.tarigan">Joward</a> 
-      </p>
-      <p>Visitor Counter:</p>
 
-<img src="https://visitor-badge.laobi.icu/badge?page_id=omegabarbar.omegabarbar.github.io">
 </body>
 </html>
