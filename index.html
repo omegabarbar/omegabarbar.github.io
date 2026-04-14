@@ -3,13 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Capsah Scoreboard</title>
 
 <style>
-
 *{box-sizing:border-box;}
-
 body{
 font-family:Arial;
 background:#0f1720;
@@ -17,13 +14,7 @@ color:white;
 margin:0;
 padding:15px;
 }
-
-h1{
-text-align:center;
-font-size:22px;
-margin-bottom:10px;
-}
-
+h1{text-align:center;font-size:22px;}
 .topbar{
 display:flex;
 flex-wrap:wrap;
@@ -31,101 +22,55 @@ gap:8px;
 justify-content:center;
 margin-bottom:15px;
 }
-
 button{
 padding:12px;
 border:none;
 border-radius:8px;
 font-weight:bold;
-font-size:14px;
 cursor:pointer;
 flex:1;
 min-width:90px;
 }
-
-.kick{background:#ff9800;}
-.reset{background:#f44336;}
-.download{background:#4caf50;}
-
-.mataBox{
-display:flex;
-justify-content:center;
-margin-bottom:15px;
-gap:10px;
-}
-
+.kick{background:#ff9800;color:white;}
+.reset{background:#f44336;color:white;}
+.download{background:#4caf50;color:white;}
+.mataBox{text-align:center;margin-bottom:10px;}
 .mata{
 width:90px;
-padding:10px;
+padding:8px;
 text-align:center;
 border-radius:6px;
 border:none;
 }
-
-.board{
-display:flex;
-flex-direction:column;
-gap:20px;
-width:100%;
-}
-
+.board{display:flex;flex-direction:column;gap:20px;}
 .tableBox{
 background:#1b2430;
 padding:10px;
 border-radius:10px;
 overflow-x:auto;
-width:100%;
--webkit-overflow-scrolling:touch;
 }
-
-table{
-border-collapse:collapse;
-min-width:420px;
-width:max-content;
-}
-
-th{
-background:#111827;
-padding:8px;
-position:sticky;
-top:0;
-}
-
-td{
-border-top:1px solid #333;
-padding:4px;
-text-align:center;
-}
-
+table{border-collapse:collapse;min-width:500px;width:100%;}
+th{background:#111827;padding:8px;}
+td{border-top:1px solid #333;padding:4px;text-align:center;}
 input[type=number]{
-width:50px;
+width:55px;
 padding:6px;
+text-align:center;
 background:#111827;
 color:white;
 border:none;
 border-radius:4px;
-text-align:center;
 }
-
-.player{
-width:60px;
-background:#111827;
-color:white;
-border:none;
-padding:6px;
-border-radius:4px;
-text-align:center;
-}
-
+.player{width:70px;font-weight:bold;}
+tfoot{background:#111827;font-weight:bold;}
 .plus{color:#00e676;}
 .minus{color:#ff5252;}
-
 </style>
 </head>
 
 <body>
 
-<h1>♠️CAPSAH SCOREBOARD♠️</h1>
+<h1>♠️ CAPSAH SCOREBOARD ♠️</h1>
 
 <div class="mataBox">
 MATA :
@@ -145,7 +90,7 @@ MATA :
 let players=4
 let rounds=25
 
-function buatTabel(id,start=[0,0,0,0],names=["P1","P2","P3","P4"],carry=[0,0,0,0]){
+function buatTabel(id,start=[0,0,0,0],names=["P1","P2","P3","P4"],startBayar=[0,0,0,0]){
 
 let container=document.createElement("div")
 container.className="tableBox"
@@ -153,7 +98,9 @@ container.className="tableBox"
 let html=`<h3>SET ${id+1}</h3>`
 
 html+=`<table id="table${id}">
-<thead><tr><th>Rnd</th>`
+<thead>
+<tr>
+<th>Rnd</th>`
 
 for(let i=0;i<players;i++){
 html+=`<th><input class="player" value="${names[i]}" onchange="saveGame()"></th>`
@@ -161,26 +108,41 @@ html+=`<th><input class="player" value="${names[i]}" onchange="saveGame()"></th>
 
 html+=`</tr></thead><tbody>`
 
-for(let r=1;r<=rounds;r++){
+for(let r=0;r<=rounds;r++){
+
 html+=`<tr><td>${r}</td>`
+
 for(let p=0;p<players;p++){
+
+if(r==0){
+html+=`<td><input type="number" value="${start[p]}" readonly></td>`
+}else{
 html+=`<td><input type="number" oninput="hitung(${id});saveGame()"></td>`
 }
+
+}
+
 html+=`</tr>`
 }
 
 html+=`</tbody><tfoot>
 
-<tr><td>Total</td>`
+<tr>
+<td>Total</td>`
+
 for(let p=0;p<players;p++){
-html+=`<td id="p${id}_${p}" data-carry="${carry[p]}">${start[p]}</td>`
+html+=`<td id="p${id}_${p}">${start[p]}</td>`
 }
+
 html+=`</tr>
 
-<tr><td>IDR</td>`
+<tr>
+<td>IDR</td>`
+
 for(let p=0;p<players;p++){
-html+=`<td id="b${id}_${p}">Rp 0</td>`
+html+=`<td id="b${id}_${p}" data-base="${startBayar[p]}">Rp 0</td>`
 }
+
 html+=`</tr>
 
 </tfoot></table>`
@@ -202,30 +164,28 @@ function hitung(id){
 
 let table=document.getElementById("table"+id)
 let total=[0,0,0,0]
-let carry=[]
 
-for(let i=0;i<players;i++){
-let el=document.getElementById(`p${id}_${i}`)
-carry[i]=parseInt(el.dataset.carry)||0
-}
+for(let i=1;i<=rounds+1;i++){
 
-for(let i=1;i<=rounds;i++){
 let row=table.rows[i]
+
 for(let j=1;j<=players;j++){
+
 let val=row.cells[j].children[0].value
-if(val!=""){
-total[j-1]+=parseInt(val)
+if(val!="") total[j-1]+=parseInt(val)
+
 }
-}
+
 }
 
 let mata=parseInt(document.getElementById("mata").value)||0
 
 for(let i=0;i<players;i++){
 
-document.getElementById(`p${id}_${i}`).innerText=total[i]+carry[i]
+document.getElementById(`p${id}_${i}`).innerText=total[i]
 
 let bayar=0
+
 for(let j=0;j<players;j++){
 if(i!=j){
 bayar+=(total[j]-total[i])
@@ -235,6 +195,10 @@ bayar+=(total[j]-total[i])
 bayar*=mata
 
 let cell=document.getElementById(`b${id}_${i}`)
+let base=parseInt(cell.dataset.base || 0)
+
+bayar += base
+
 cell.innerText=formatRupiah(bayar)
 cell.className=bayar<0?"minus":"plus"
 
@@ -245,25 +209,33 @@ cell.className=bayar<0?"minus":"plus"
 function kick(){
 
 let tables=document.querySelectorAll("table")
-let last=tables[tables.length-1]
+let lastIndex=tables.length-1
+let last=tables[lastIndex]
 
 let totals=[]
 let names=[]
+let bayars=[]
 
 for(let i=0;i<players;i++){
-totals.push(parseInt(last.querySelector(`#p${tables.length-1}_${i}`).innerText))
+totals.push(parseInt(last.querySelector(`#p${lastIndex}_${i}`).innerText))
+}
+
+for(let i=0;i<players;i++){
+let text=last.querySelector(`#b${lastIndex}_${i}`).innerText
+let num=parseInt(text.replace(/[^\d-]/g,""))
+bayars.push(num || 0)
 }
 
 last.querySelectorAll(".player").forEach(e=>names.push(e.value))
 
-buatTabel(tables.length,totals,names,totals)
+buatTabel(tables.length,totals,names,bayars)
 
 saveGame()
 
 }
 
 function resetGame(){
-if(confirm("Reset semua data?")){
+if(confirm("Reset semua score?")){
 localStorage.removeItem("capsahScore")
 location.reload()
 }
@@ -278,30 +250,34 @@ tables:[]
 
 let tables=document.querySelectorAll("table")
 
-tables.forEach((table)=>{
+tables.forEach((table,index)=>{
 
 let names=[]
-table.querySelectorAll(".player").forEach(p=>{
-names.push(p.value)
-})
+table.querySelectorAll(".player").forEach(p=>names.push(p.value))
 
 let scores=[]
 
-for(let r=1;r<=rounds;r++){
+for(let r=0;r<=rounds;r++){
+
 let row=[]
-let tr=table.rows[r]
+let tr=table.rows[r+1]
+
 for(let c=1;c<=players;c++){
 row.push(tr.cells[c].children[0].value)
 }
+
 scores.push(row)
 }
 
-let carry=[]
+let bayars=[]
+
 for(let i=0;i<players;i++){
-carry.push(parseInt(table.querySelector(`#p${tables.length-1}_${i}`)?.dataset?.carry||0))
+let text=table.querySelector(`#b${index}_${i}`).innerText
+let num=parseInt(text.replace(/[^\d-]/g,""))
+bayars.push(num||0)
 }
 
-data.tables.push({names,scores,carry})
+data.tables.push({names,scores,bayars})
 
 })
 
@@ -325,17 +301,21 @@ document.getElementById("tables").innerHTML=""
 
 data.tables.forEach((set,index)=>{
 
-buatTabel(index,[0,0,0,0],set.names,set.carry||[0,0,0,0])
+buatTabel(index,[0,0,0,0],set.names,set.bayars||[0,0,0,0])
 
 let table=document.getElementById("table"+index)
 
-for(let r=1;r<=rounds;r++){
+for(let r=0;r<=rounds;r++){
+
 for(let c=1;c<=players;c++){
-let val=set.scores[r-1][c-1]
+
+let val=set.scores[r][c-1]
 if(val!=""){
-table.rows[r].cells[c].children[0].value=val
+table.rows[r+1].cells[c].children[0].value=val
 }
+
 }
+
 }
 
 hitung(index)
@@ -361,11 +341,7 @@ let cols=row.querySelectorAll("td,th,input")
 let rowData=[]
 
 cols.forEach(col=>{
-if(col.tagName=="INPUT"){
-rowData.push(col.value)
-}else{
-rowData.push(col.innerText)
-}
+rowData.push(col.tagName=="INPUT"?col.value:col.innerText)
 })
 
 csv+=rowData.join(",")+"\n"
