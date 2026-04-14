@@ -7,62 +7,14 @@
 
 <style>
 *{box-sizing:border-box;}
-body{
-font-family:Arial;
-background:#0f1720;
-color:white;
-margin:0;
-padding:15px;
-}
-h1{text-align:center;font-size:22px;}
-.topbar{
-display:flex;
-flex-wrap:wrap;
-gap:8px;
-justify-content:center;
-margin-bottom:15px;
-}
-button{
-padding:12px;
-border:none;
-border-radius:8px;
-font-weight:bold;
-cursor:pointer;
-flex:1;
-min-width:90px;
-}
-.kick{background:#ff9800;color:white;}
-.reset{background:#f44336;color:white;}
-.download{background:#4caf50;color:white;}
-.mataBox{text-align:center;margin-bottom:10px;}
-.mata{
-width:90px;
-padding:8px;
-text-align:center;
-border-radius:6px;
-border:none;
-}
+body{font-family:Arial;background:#0f1720;color:white;padding:15px;margin:0;}
+h1{text-align:center;}
+button{padding:10px;border:none;border-radius:6px;margin:5px;cursor:pointer;}
+.kick{background:orange;}
+.reset{background:red;color:white;}
 .board{display:flex;flex-direction:column;gap:20px;}
-.tableBox{
-background:#1b2430;
-padding:10px;
-border-radius:10px;
-overflow-x:auto;
-}
-table{border-collapse:collapse;min-width:500px;width:100%;}
-th{background:#111827;padding:8px;}
-td{border-top:1px solid #333;padding:4px;text-align:center;}
-input[type=number]{
-width:55px;
-padding:6px;
-text-align:center;
-background:#111827;
-color:white;
-border:none;
-border-radius:4px;
-}
-.player{width:70px;font-weight:bold;}
-tfoot{background:#111827;font-weight:bold;}
+.tableBox{background:#1b2430;padding:10px;border-radius:10px;overflow-x:auto;}
+input{background:#111827;color:white;border:none;text-align:center;}
 .plus{color:#00e676;}
 .minus{color:#ff5252;}
 </style>
@@ -70,18 +22,15 @@ tfoot{background:#111827;font-weight:bold;}
 
 <body>
 
-<h1>♠️ CAPSAH SCOREBOARD ♠️</h1>
+<h1>CAPSAH SCOREBOARD</h1>
 
-<div class="mataBox">
-MATA :
-<input id="mata" class="mata" type="number" value="200" oninput="saveGame()">
-</div>
+MATA:
+<input id="mata" type="number" value="200" oninput="saveGame()">
 
-<div class="topbar">
+<br>
+
 <button class="kick" onclick="kick()">KICK</button>
-<button class="download" onclick="downloadScore()">DOWNLOAD</button>
 <button class="reset" onclick="resetGame()">RESET</button>
-</div>
 
 <div id="tables" class="board"></div>
 
@@ -90,74 +39,50 @@ MATA :
 let players=4
 let rounds=25
 
-function buatTabel(id,start=[0,0,0,0],names=["P1","P2","P3","P4"],startBayar=[0,0,0,0]){
+function buatTabel(id,start=[0,0,0,0],names=["P1","P2","P3","P4"]){
 
-let container=document.createElement("div")
-container.className="tableBox"
+let div=document.createElement("div")
+div.className="tableBox"
 
-let html=`<h3>SET ${id+1}</h3>`
+let html=`<h3>SET ${id+1}</h3><table id="table${id}">`
 
-html+=`<table id="table${id}">
-<thead>
-<tr>
-<th>Rnd</th>`
-
+html+=`<tr><th>Rnd</th>`
 for(let i=0;i<players;i++){
-html+=`<th><input class="player" value="${names[i]}" onchange="saveGame()"></th>`
+html+=`<th><input value="${names[i]}" onchange="saveGame()"></th>`
 }
+html+=`</tr>`
 
-html+=`</tr></thead><tbody>`
+// ROUND 0 
+html+=`<tr><td>0</td>`
+for(let i=0;i<players;i++){
+html+=`<td><input value="${start[i]}" readonly></td>`
+}
+html+=`</tr>`
 
-for(let r=0;r<=rounds;r++){
-
+// ROUND 1-25
+for(let r=1;r<=rounds;r++){
 html+=`<tr><td>${r}</td>`
-
 for(let p=0;p<players;p++){
-
-if(r==0){
-html+=`<td><input type="number" value="${start[p]}" readonly></td>`
-}else{
 html+=`<td><input type="number" oninput="hitung(${id});saveGame()"></td>`
 }
-
-}
-
 html+=`</tr>`
 }
 
-html+=`</tbody><tfoot>
-
-<tr>
-<td>Total</td>`
-
-for(let p=0;p<players;p++){
-html+=`<td id="p${id}_${p}">${start[p]}</td>`
+html+=`<tr><td>Total</td>`
+for(let i=0;i<players;i++){
+html+=`<td id="p${id}_${i}">0</td>`
 }
+html+=`</tr>`
 
-html+=`</tr>
-
-<tr>
-<td>IDR</td>`
-
-for(let p=0;p<players;p++){
-html+=`<td id="b${id}_${p}" data-base="${startBayar[p]}">Rp 0</td>`
+html+=`<tr><td>IDR</td>`
+for(let i=0;i<players;i++){
+html+=`<td id="b${id}_${i}">Rp 0</td>`
 }
+html+=`</tr></table>`
 
-html+=`</tr>
+div.innerHTML=html
+document.getElementById("tables").appendChild(div)
 
-</tfoot></table>`
-
-container.innerHTML=html
-document.getElementById("tables").appendChild(container)
-
-hitung(id)
-
-}
-
-function formatRupiah(num){
-let sign=num<0?"-":""
-num=Math.abs(num)
-return sign+"Rp "+num.toLocaleString("id-ID")
 }
 
 function hitung(id){
@@ -165,13 +90,12 @@ function hitung(id){
 let table=document.getElementById("table"+id)
 let total=[0,0,0,0]
 
-for(let i=1;i<=rounds+1;i++){
-
-let row=table.rows[i]
+// MULAI DARI ROW 2
+for(let i=2;i<table.rows.length-2;i++){
 
 for(let j=1;j<=players;j++){
 
-let val=row.cells[j].children[0].value
+let val=table.rows[i].cells[j].children[0].value
 if(val!="") total[j-1]+=parseInt(val)
 
 }
@@ -195,7 +119,7 @@ bayar+=(total[j]-total[i])
 bayar*=mata
 
 let cell=document.getElementById(`b${id}_${i}`)
-cell.innerText=formatRupiah(bayar)
+cell.innerText="Rp "+bayar.toLocaleString("id-ID")
 cell.className=bayar<0?"minus":"plus"
 
 }
@@ -205,85 +129,34 @@ cell.className=bayar<0?"minus":"plus"
 function kick(){
 
 let tables=document.querySelectorAll("table")
-let lastIndex=tables.length-1
-let last=tables[lastIndex]
+let last=tables[tables.length-1]
 
 let totals=[]
-let names=[]
-let bayars=[]
 
 for(let i=0;i<players;i++){
-totals.push(parseInt(last.querySelector(`#p${lastIndex}_${i}`).innerText))
+totals.push(parseInt(last.querySelector(`#p${tables.length-1}_${i}`).innerText))
 }
 
-for(let i=0;i<players;i++){
-let text=last.querySelector(`#b${lastIndex}_${i}`).innerText
-let num=parseInt(text.replace(/[^\d-]/g,""))
-bayars.push(num || 0)
-}
-
-last.querySelectorAll(".player").forEach(e=>names.push(e.value))
-
-buatTabel(tables.length,totals,names,bayars)
+buatTabel(tables.length,totals)
 
 saveGame()
 
-}
-
-function resetGame(){
-if(confirm("Reset semua score?")){
-localStorage.removeItem("capsahScore")
-location.reload()
-}
 }
 
 function saveGame(){
 
 let data={
 mata:document.getElementById("mata").value,
-tables:[]
+html:document.getElementById("tables").innerHTML
 }
 
-let tables=document.querySelectorAll("table")
-
-tables.forEach((table,index)=>{
-
-let names=[]
-table.querySelectorAll(".player").forEach(p=>names.push(p.value))
-
-let scores=[]
-
-for(let r=0;r<=rounds;r++){
-
-let row=[]
-let tr=table.rows[r+1]
-
-for(let c=1;c<=players;c++){
-row.push(tr.cells[c].children[0].value)
-}
-
-scores.push(row)
-}
-
-let bayars=[]
-
-for(let i=0;i<players;i++){
-let text=table.querySelector(`#b${index}_${i}`).innerText
-let num=parseInt(text.replace(/[^\d-]/g,""))
-bayars.push(num||0)
-}
-
-data.tables.push({names,scores,bayars})
-
-})
-
-localStorage.setItem("capsahScore",JSON.stringify(data))
+localStorage.setItem("capsah",JSON.stringify(data))
 
 }
 
 function loadGame(){
 
-let data=localStorage.getItem("capsahScore")
+let data=localStorage.getItem("capsah")
 
 if(!data){
 buatTabel(0)
@@ -293,68 +166,13 @@ return
 data=JSON.parse(data)
 
 document.getElementById("mata").value=data.mata
-document.getElementById("tables").innerHTML=""
-
-data.tables.forEach((set,index)=>{
-
-buatTabel(index,[0,0,0,0],set.names,set.bayars||[0,0,0,0])
-
-let table=document.getElementById("table"+index)
-
-for(let r=0;r<=rounds;r++){
-
-for(let c=1;c<=players;c++){
-
-let val=set.scores[r][c-1]
-if(val!=""){
-table.rows[r+1].cells[c].children[0].value=val
-}
+document.getElementById("tables").innerHTML=data.html
 
 }
 
-}
-
-hitung(index)
-
-})
-
-}
-
-function downloadScore(){
-
-let tables=document.querySelectorAll("table")
-let csv="CAPSAH SCOREBOARD\n\n"
-
-tables.forEach((table,index)=>{
-
-csv+="SET "+(index+1)+"\n"
-
-let rows=table.querySelectorAll("tr")
-
-rows.forEach(row=>{
-
-let cols=row.querySelectorAll("td,th,input")
-let rowData=[]
-
-cols.forEach(col=>{
-rowData.push(col.tagName=="INPUT"?col.value:col.innerText)
-})
-
-csv+=rowData.join(",")+"\n"
-
-})
-
-csv+="\n"
-
-})
-
-let blob=new Blob([csv],{type:"text/csv"})
-let link=document.createElement("a")
-
-link.href=URL.createObjectURL(blob)
-link.download="capsah_scoreboard.csv"
-link.click()
-
+function resetGame(){
+localStorage.clear()
+location.reload()
 }
 
 loadGame()
