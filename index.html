@@ -195,10 +195,6 @@ bayar+=(total[j]-total[i])
 bayar*=mata
 
 let cell=document.getElementById(`b${id}_${i}`)
-let base=parseInt(cell.dataset.base || 0)
-
-bayar += base
-
 cell.innerText=formatRupiah(bayar)
 cell.className=bayar<0?"minus":"plus"
 
