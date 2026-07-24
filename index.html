@@ -17,20 +17,27 @@ button{padding:10px;border:none;border-radius:6px;margin:5px;cursor:pointer;}
 input{background:#111827;color:white;border:none;text-align:center;}
 .plus{color:#00e676;}
 .minus{color:#ff5252;}
+.footer{padding:16px 10px;text-align:center;color:#94a3b8;font-size:0.95rem;}
 </style>
 </head>
 
 <body>
 
+<a href="main.html" style="position: absolute; top: 10px; right: 10px; text-decoration: none;">
+  <button style="padding: 10px 15px; background: #53c8ef; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">← Back to Portfolio</button>
+</a>
+
 <h1>CAPSAH SCOREBOARD</h1>
-
-MATA:
-<input id="mata" type="number" value="200" oninput="saveGame()">
-
-<br>
-
-<button class="kick" onclick="kick()">KICK</button>
-<button class="reset" onclick="resetGame()">RESET</button>
+<div class="topbar">
+  <div class="mata-group">
+    <label for="mata">MATA</label>
+    <input id="mata" type="number" value="200" oninput="saveGame()">
+  </div>
+  <div class="action-buttons">
+    <button class="kick" onclick="kick()">KICK</button>
+    <button class="reset" onclick="resetGame()">RESET</button>
+  </div>
+</div>
 
 <div id="tables" class="board"></div>
 
@@ -39,7 +46,41 @@ MATA:
 let players=4
 let rounds=25
 
-function buatTabel(id,start=[0,0,0,0],names=["P1","P2","P3","P4"]){
+function getTableData(){
+let tables=document.querySelectorAll("table")
+let data=[]
+tables.forEach((table,setIdx)=>{
+let set={
+names:[],
+start:[],
+scores:[]
+}
+let hasStart = table.rows[1] && table.rows[1].cells[0].innerText==="0" && table.rows[1].cells[1].children[0].readOnly
+// Ambil nama pemain dari header
+for(let i=1;i<=players;i++){
+set.names.push(table.rows[0].cells[i].children[0].value)
+}
+if(hasStart){
+  for(let i=1;i<=players;i++){
+    set.start.push(table.rows[1].cells[i].children[0].value)
+  }
+}
+// Ambil score dari semua round
+for(let round=1;round<=rounds;round++){
+let roundData=[]
+let rowIndex = round + (hasStart ? 1 : 0)
+for(let p=1;p<=players;p++){
+let val=table.rows[rowIndex].cells[p].children[0].value
+roundData.push(val===""?0:parseInt(val))
+}
+set.scores.push(roundData)
+}
+data.push(set)
+})
+return data
+}
+
+function buatTabel(id,start=[0,0,0,0],names=["P1","P2","P3","P4"],hasStart=false){
 
 let div=document.createElement("div")
 div.className="tableBox"
@@ -48,16 +89,17 @@ let html=`<h3>SET ${id+1}</h3><table id="table${id}">`
 
 html+=`<tr><th>Rnd</th>`
 for(let i=0;i<players;i++){
-html+=`<th><input value="${names[i]}" onchange="saveGame()"></th>`
+html+=`<th><input value="${names[i]}" onchange="hitung(${id})"></th>`
 }
 html+=`</tr>`
 
-// ROUND 0 
-html+=`<tr><td>0</td>`
-for(let i=0;i<players;i++){
-html+=`<td><input value="${start[i]}" readonly></td>`
+if(hasStart){
+  html+=`<tr><td>0</td>`
+  for(let i=0;i<players;i++){
+    html+=`<td><input value="${start[i]}" readonly></td>`
+  }
+  html+=`</tr>`
 }
-html+=`</tr>`
 
 // ROUND 1-25
 for(let r=1;r<=rounds;r++){
@@ -90,8 +132,7 @@ function hitung(id){
 let table=document.getElementById("table"+id)
 let total=[0,0,0,0]
 
-// MULAI DARI ROW 2
-for(let i=2;i<table.rows.length-2;i++){
+for(let i=1;i<table.rows.length-2;i++){
 
 for(let j=1;j<=players;j++){
 
@@ -124,6 +165,8 @@ cell.className=bayar<0?"minus":"plus"
 
 }
 
+saveGame()
+
 }
 
 function kick(){
@@ -132,52 +175,113 @@ let tables=document.querySelectorAll("table")
 let last=tables[tables.length-1]
 
 let totals=[]
+let names=[]
 
 for(let i=0;i<players;i++){
-totals.push(parseInt(last.querySelector(`#p${tables.length-1}_${i}`).innerText))
+  totals.push(parseInt(last.querySelector(`#p${tables.length-1}_${i}`).innerText))
+  names.push(last.rows[0].cells[i+1].children[0].value)
 }
 
-buatTabel(tables.length,totals)
+buatTabel(tables.length,totals,names,true)
 
+hitung(tables.length)
 saveGame()
 
 }
 
 function saveGame(){
 
-let data={
+let tables=document.querySelectorAll("table")
+let gameData={
 mata:document.getElementById("mata").value,
-html:document.getElementById("tables").innerHTML
+sets:[]
 }
 
-localStorage.setItem("capsah",JSON.stringify(data))
+tables.forEach((table,setIdx)=>{
+let set={
+names:[],
+start:[],
+scores:[]
+}
+let hasStart = table.rows[1] && table.rows[1].cells[0].innerText==="0" && table.rows[1].cells[1].children[0].readOnly
+// Ambil nama pemain
+for(let i=1;i<=players;i++){
+set.names.push(table.rows[0].cells[i].children[0].value)
+}
+// Ambil nilai start jika ada
+if(hasStart){
+  for(let i=1;i<=players;i++){
+    set.start.push(table.rows[1].cells[i].children[0].value)
+  }
+} else {
+  set.start=[0,0,0,0]
+}
+// Ambil scores dari semua round
+for(let round=1;round<=rounds;round++){
+let roundScores=[]
+for(let p=1;p<=players;p++){
+let rowIndex = round + (hasStart ? 1 : 0)
+let val=table.rows[rowIndex].cells[p].children[0].value
+roundScores.push(val)  // Simpan nilai asli, kosong tetap kosong
+}
+set.scores.push(roundScores)
+}
+gameData.sets.push(set)
+})
+
+localStorage.setItem("capsah",JSON.stringify(gameData))
 
 }
 
 function loadGame(){
 
-let data=localStorage.getItem("capsah")
+let savedData=localStorage.getItem("capsah")
 
-if(!data){
+if(!savedData){
 buatTabel(0)
 return
 }
 
-data=JSON.parse(data)
+let gameData=JSON.parse(savedData)
+document.getElementById("mata").value=gameData.mata
 
-document.getElementById("mata").value=data.mata
-document.getElementById("tables").innerHTML=data.html
+// Buat tabel untuk setiap set yang tersimpan
+gameData.sets.forEach((set,idx)=>{
+let hasStart = idx > 0
+let start = hasStart ? set.start : [0,0,0,0]
+buatTabel(idx,start,set.names,hasStart)
+
+// Isi scores kembali
+let table=document.getElementById("table"+idx)
+set.scores.forEach((roundScores,roundIdx)=>{
+let rowIndex = roundIdx + 1 + (hasStart ? 1 : 0)
+for(let p=0;p<players;p++){
+table.rows[rowIndex].cells[p+1].children[0].value=roundScores[p]
+}
+})
+
+// Reset display total & bayar sebelum hitung
+for(let i=0;i<players;i++){
+document.getElementById(`p${idx}_${i}`).innerText="0"
+document.getElementById(`b${idx}_${i}`).innerText="Rp 0"
+}
+
+// Hitung ulang total & bayar
+hitung(idx)
+})
 
 }
 
 function resetGame(){
+if(confirm("Yakin mau reset semua data?")){
 localStorage.clear()
 location.reload()
+}
 }
 
 loadGame()
 
 </script>
-
+<footer class="footer">© 2026 Capsah Scoreboard. All rights reserved.</footer>
 </body>
 </html>
