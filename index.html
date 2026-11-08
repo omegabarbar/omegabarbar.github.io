@@ -31,7 +31,7 @@ input{background:#111827;color:white;border:none;text-align:center;}
 <div class="topbar">
   <div class="mata-group">
     <label for="mata">MATA</label>
-    <input id="mata" type="number" value="200" oninput="saveGame()">
+    <input id="mata" type="number" value="5000" oninput="saveGame()">
   </div>
   <div class="action-buttons">
     <button class="kick" onclick="kick()">KICK</button>
@@ -56,7 +56,6 @@ start:[],
 scores:[]
 }
 let hasStart = table.rows[1] && table.rows[1].cells[0].innerText==="0" && table.rows[1].cells[1].children[0].readOnly
-// Ambil nama pemain dari header
 for(let i=1;i<=players;i++){
 set.names.push(table.rows[0].cells[i].children[0].value)
 }
@@ -65,7 +64,6 @@ if(hasStart){
     set.start.push(table.rows[1].cells[i].children[0].value)
   }
 }
-// Ambil score dari semua round
 for(let round=1;round<=rounds;round++){
 let roundData=[]
 let rowIndex = round + (hasStart ? 1 : 0)
@@ -101,7 +99,6 @@ if(hasStart){
   html+=`</tr>`
 }
 
-// ROUND 1-25
 for(let r=1;r<=rounds;r++){
 html+=`<tr><td>${r}</td>`
 for(let p=0;p<players;p++){
@@ -204,11 +201,11 @@ start:[],
 scores:[]
 }
 let hasStart = table.rows[1] && table.rows[1].cells[0].innerText==="0" && table.rows[1].cells[1].children[0].readOnly
-// Ambil nama pemain
+
 for(let i=1;i<=players;i++){
 set.names.push(table.rows[0].cells[i].children[0].value)
 }
-// Ambil nilai start jika ada
+
 if(hasStart){
   for(let i=1;i<=players;i++){
     set.start.push(table.rows[1].cells[i].children[0].value)
@@ -216,13 +213,13 @@ if(hasStart){
 } else {
   set.start=[0,0,0,0]
 }
-// Ambil scores dari semua round
+
 for(let round=1;round<=rounds;round++){
 let roundScores=[]
 for(let p=1;p<=players;p++){
 let rowIndex = round + (hasStart ? 1 : 0)
 let val=table.rows[rowIndex].cells[p].children[0].value
-roundScores.push(val)  // Simpan nilai asli, kosong tetap kosong
+roundScores.push(val)  
 }
 set.scores.push(roundScores)
 }
@@ -245,13 +242,13 @@ return
 let gameData=JSON.parse(savedData)
 document.getElementById("mata").value=gameData.mata
 
-// Buat tabel untuk setiap set yang tersimpan
+
 gameData.sets.forEach((set,idx)=>{
 let hasStart = idx > 0
 let start = hasStart ? set.start : [0,0,0,0]
 buatTabel(idx,start,set.names,hasStart)
 
-// Isi scores kembali
+
 let table=document.getElementById("table"+idx)
 set.scores.forEach((roundScores,roundIdx)=>{
 let rowIndex = roundIdx + 1 + (hasStart ? 1 : 0)
@@ -260,13 +257,13 @@ table.rows[rowIndex].cells[p+1].children[0].value=roundScores[p]
 }
 })
 
-// Reset display total & bayar sebelum hitung
+
 for(let i=0;i<players;i++){
 document.getElementById(`p${idx}_${i}`).innerText="0"
 document.getElementById(`b${idx}_${i}`).innerText="Rp 0"
 }
 
-// Hitung ulang total & bayar
+
 hitung(idx)
 })
 
