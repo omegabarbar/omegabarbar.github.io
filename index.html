@@ -277,20 +277,14 @@ location.reload()
 }
 
 loadGame()
-
-fetch('https://api.countapi.xyz/hit/capsah-scoreboard/visits')
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById('visitor-count').innerText = data.value.toLocaleString('id-ID');
-    }).catch(() => {
-      document.getElementById('visitor-count').innerText = '-';
-    });
-  
 </script>
  <footer class="footer">
-  © 2026 Capsah Scoreboard. All rights reserved. 
-  <br>
-  <span>👁️ Pengunjung: <span id="visitor-count">...</span></span>
+  © 2026 Capsah Scoreboard. All rights reserved.
+  <div style="margin-top: 8px;">
+    <a href="https://hits.sh/domain-web-anda.com/" target="_blank">
+      <img src="https://hits.sh/domain-web-anda.com.svg?style=flat-square&label=Pengunjung&color=00e676&labelColor=1b2430" alt="Visitor Count">
+    </a>
+  </div>
 </footer>
 
 </body>
