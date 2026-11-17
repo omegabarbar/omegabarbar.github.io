@@ -40,28 +40,26 @@ input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;
 }
 .btn-share:hover{background:#20ba5a;}
 
-/* Styling Topbar & Info Jadwal */
+/* Styling Topbar & Info Jadwal Bayar di Head */
 .topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;background:#1b2430;padding:12px 15px;border-radius:10px;margin-bottom:20px;gap:10px;}
 .mata-group{display:flex;align-items:center;gap:8px;}
-.schedule-info-box{
+.payment-info-box{
   text-align:center;
   background:#1b2430;
   border:1px solid #334155;
-  padding:10px 15px;
+  padding:8px 15px;
   border-radius:8px;
-  max-width:600px;
+  max-width:450px;
   margin:0 auto 20px auto;
-  font-size:0.95rem;
+  font-size:0.9rem;
   display:flex;
-  justify-content:space-between;
+  justify-content:center;
   align-items:center;
-  gap:15px;
-  flex-wrap:wrap;
+  gap:12px;
 }
-.schedule-details{display:flex;flex-direction:column;gap:4px;text-align:left;}
-.btn-edit-date{background:#334155;color:white;padding:6px 12px;font-size:0.8rem;margin:0;}
+.btn-edit-date{background:#334155;color:white;padding:4px 8px;font-size:0.75rem;margin:0;}
 
-/* Styling Popup / Modal Sebelum Masuk */
+/* Styling Popup / Modal Jadwal Bayar */
 .modal-overlay{
   position:fixed;
   top:0;left:0;width:100%;height:100%;
@@ -78,21 +76,21 @@ input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;
   border:1px solid #334155;
   padding:25px;
   border-radius:12px;
-  max-width:420px;
+  max-width:380px;
   width:100%;
   text-align:left;
   box-shadow:0 10px 25px rgba(0,0,0,0.5);
 }
 .modal-box h2{margin-top:0;color:#00e676;text-align:center;}
-.modal-box p{color:#cbd5e1;font-size:0.95rem;margin-bottom:15px;}
-.modal-box label{font-size:0.85rem;color:#94a3b8;display:block;margin-bottom:4px;}
+.modal-box p{color:#cbd5e1;font-size:0.9rem;margin-bottom:15px;text-align:center;}
+.modal-box label{font-size:0.85rem;color:#94a3b8;display:block;margin-bottom:5px;}
 .modal-box input{
   width:100%;
   padding:10px;
   font-size:0.95rem;
   margin-bottom:15px;
   color-scheme:dark;
-  text-align:left;
+  text-align:center;
 }
 .btn-submit-date{
   background:#00e676;
@@ -111,18 +109,16 @@ input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;
 
 <body>
 
-<!-- POPUP / MODAL JADWAL MAIN & BAYAR -->
-<div id="scheduleModal" class="modal-overlay">
+<!-- POPUP / MODAL JADWAL BATAS BAYAR -->
+<div id="paymentModal" class="modal-overlay">
   <div class="modal-box">
-    <h2>Pengaturan Jadwal Main</h2>
+    <h2>Jadwal Pembayaran</h2>
+    <p>Tentukan batas tanggal, bulan, dan tahun pembayaran tagihan:</p>
     
-    <label for="modalPlayInput">Jadwal Main (Tanggal & Jam):</label>
-    <input type="datetime-local" id="modalPlayInput" required>
-
-    <label for="modalPayInput">Jadwal Batas Bayar / Tagihan:</label>
+    <label for="modalPayInput">Tanggal Batas Bayar:</label>
     <input type="date" id="modalPayInput" required>
 
-    <button class="btn-submit-date" onclick="simpanJadwal()">Mulai Permainan</button>
+    <button class="btn-submit-date" onclick="simpanJadwalBayar()">Mulai Permainan</button>
   </div>
 </div>
 
@@ -132,18 +128,15 @@ input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;
 
 <h1>CAPSAH SCOREBOARD</h1>
 
-<!-- TAMPILAN INFORMASI JADWAL DI BAWAH JUDUL -->
-<div class="schedule-info-box" id="scheduleInfoBox" style="display:none;">
-  <div class="schedule-details">
-    <span>🎮 <strong>Jadwal Main:</strong> <span id="displayPlayDate" style="color:#00e676;">-</span></span>
-    <span>💸 <strong>Jadwal Bayar:</strong> <span id="displayPayDate" style="color:#ff5252;">-</span></span>
-  </div>
-  <button class="btn-edit-date" onclick="bukaModalJadwal()">Ubah Jadwal</button>
+<!-- TAMPILAN INFORMASI BATAS BAYAR DI BAWAH JUDUL -->
+<div class="payment-info-box" id="paymentInfoBox" style="display:none;">
+  <span>Batas Bayar: <strong id="displayPayDate" style="color:#ff5252;">-</strong></span>
+  <button class="btn-edit-date" onclick="bukaModalBayar()">Ubah Tanggal</button>
 </div>
 
 <div class="topbar">
   <div class="mata-group">
-    <label for="mata"><strong>MATA (Rp)</strong></label>
+    <label for="mata"><strong>MATA</strong></label>
     <input id="mata" type="number" value="5000" oninput="updateSemuaHitung()">
   </div>
   <div class="action-buttons">
@@ -159,10 +152,8 @@ let players = 4;
 let rounds = 25;
 
 // --- FORMAT TANGGAL & JAM ---
-function formatDateTimeIndo(dateTimeString) {
-  if (!dateTimeString) return "-";
+function formatDateTimeIndo(dateObj) {
   const opsi = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
-  const dateObj = new Date(dateTimeString);
   return dateObj.toLocaleDateString('id-ID', opsi) + " WIB";
 }
 
@@ -173,52 +164,46 @@ function formatDateIndo(dateString) {
   return dateObj.toLocaleDateString('id-ID', opsi);
 }
 
-function simpanJadwal() {
-  const playVal = document.getElementById("modalPlayInput").value;
+function simpanJadwalBayar() {
   const payVal = document.getElementById("modalPayInput").value;
 
-  if (!playVal || !payVal) {
-    alert("Mohon lengkapi Jadwal Main dan Jadwal Bayar terlebih dahulu!");
+  if (!payVal) {
+    alert("Mohon pilih tanggal batas bayar terlebih dahulu!");
     return;
   }
 
-  localStorage.setItem("capsah_play_time", playVal);
+  // Jika jadwal main belum ada, catat waktu saat pertama kali web dibuka/diset ini sebagai jadwal main
+  if (!localStorage.getItem("capsah_play_time")) {
+    localStorage.setItem("capsah_play_time", new Date().toISOString());
+  }
+
   localStorage.setItem("capsah_pay_date", payVal);
 
-  tampilkanInfoJadwal(playVal, payVal);
-  document.getElementById("scheduleModal").style.display = "none";
+  tampilkanInfoBayar(payVal);
+  document.getElementById("paymentModal").style.display = "none";
 }
 
-function bukaModalJadwal() {
-  const savedPlay = localStorage.getItem("capsah_play_time");
+function bukaModalBayar() {
   const savedPay = localStorage.getItem("capsah_pay_date");
-
-  if (savedPlay) document.getElementById("modalPlayInput").value = savedPlay;
   if (savedPay) document.getElementById("modalPayInput").value = savedPay;
-
-  document.getElementById("scheduleModal").style.display = "flex";
+  document.getElementById("paymentModal").style.display = "flex";
 }
 
-function tampilkanInfoJadwal(playVal, payVal) {
-  document.getElementById("displayPlayDate").innerText = formatDateTimeIndo(playVal);
+function tampilkanInfoBayar(payVal) {
   document.getElementById("displayPayDate").innerText = formatDateIndo(payVal);
-  document.getElementById("scheduleInfoBox").style.display = "flex";
+  document.getElementById("paymentInfoBox").style.display = "flex";
 }
 
-function cekStatusJadwal() {
-  const savedPlay = localStorage.getItem("capsah_play_time");
+function cekStatusBayar() {
   const savedPay = localStorage.getItem("capsah_pay_date");
 
-  if (savedPlay && savedPay) {
-    document.getElementById("scheduleModal").style.display = "none";
-    tampilkanInfoJadwal(savedPlay, savedPay);
+  if (savedPay) {
+    document.getElementById("paymentModal").style.display = "none";
+    tampilkanInfoBayar(savedPay);
   } else {
-    // Set default ke waktu sekarang
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById("modalPlayInput").value = now.toISOString().slice(0, 16);
+    // Set default input date ke hari ini
     document.getElementById("modalPayInput").value = new Date().toISOString().split('T')[0];
-    document.getElementById("scheduleModal").style.display = "flex";
+    document.getElementById("paymentModal").style.display = "flex";
   }
 }
 
@@ -231,7 +216,7 @@ function buatTabel(id, start=[0,0,0,0], names=["P1","P2","P3","P4"], hasStart=fa
     <div class="table-header-flex">
       <h3>SET ${id+1}</h3>
       <button class="btn-share" onclick="bagikanKeWA(${id})">
-        💬 Share ke WhatsApp
+        Bagikan hasil ke WhatsApp
       </button>
     </div>
     <table id="table${id}">
@@ -275,13 +260,17 @@ function buatTabel(id, start=[0,0,0,0], names=["P1","P2","P3","P4"], hasStart=fa
   document.getElementById("tables").appendChild(div);
 }
 
-// --- FUNGSI BAGIKAN KE WHATSAPP (LENGKAP DUA JADWAL) ---
+// --- FUNGSI BAGIKAN KE WHATSAPP ---
 function bagikanKeWA(id) {
   let table = document.getElementById("table" + id);
-  let savedPlay = localStorage.getItem("capsah_play_time");
-  let savedPay = localStorage.getItem("capsah_pay_date");
   
-  let jadwalMainStr = formatDateTimeIndo(savedPlay);
+  // Ambil jadwal main (jika belum ada, pakai waktu sekarang)
+  let savedPlay = localStorage.getItem("capsah_play_time");
+  let jadwalMainObj = savedPlay ? new Date(savedPlay) : new Date();
+  let jadwalMainStr = formatDateTimeIndo(jadwalMainObj);
+
+  // Ambil batas bayar
+  let savedPay = localStorage.getItem("capsah_pay_date");
   let jadwalBayarStr = formatDateIndo(savedPay);
   let mataVal = document.getElementById("mata").value;
 
@@ -295,18 +284,18 @@ function bagikanKeWA(id) {
 
   dataPemain.sort((a, b) => b.totalPoin - a.totalPoin);
 
-  let pesan = `🃏 *HASIL CAPSAH SCOREBOARD (SET ${id + 1})* 🃏\n`;
-  pesan += `🎮 Jadwal Main: ${jadwalMainStr}\n`;
-  pesan += `💸 Batas Bayar: *${jadwalBayarStr}*\n`;
-  pesan += `💰 Nilai Mata: Rp ${parseInt(mataVal).toLocaleString("id-ID")}\n\n`;
-  pesan += `*Klasemen Sementara:*\n`;
+  let pesan = `*HASIL CAPSAH SCOREBOARD (SET ${id + 1})*\n`;
+  pesan += ` Tanggal Mata: ${jadwalMainStr}\n`;
+  pesan += ` Tanggal Bayar: *${jadwalBayarStr}*\n`;
+  pesan += ` Mata: Rp ${parseInt(mataVal).toLocaleString("id-ID")}\n\n`;
+  pesan += `*Hasil Akhir:*\n`;
 
-  let medali = ["🥇", "🥈", "🥉", "💀"];
+  let medali = ["1", "2", "3", "4"];
   dataPemain.forEach((p, idx) => {
     pesan += `${medali[idx]} *${p.nama}* : ${p.totalPoin} poin (${p.idrText})\n`;
   });
 
-  pesan += `\n_Dicatat otomatis via Capsah Scoreboard_ 🚀`;
+  pesan += `\n_Dicatat otomatis via Capsah Scoreboard_ 🚀\n omegabarbar.github.io`;
 
   let urlWA = `https://api.whatsapp.com/send?text=${encodeURIComponent(pesan)}`;
   window.open(urlWA, '_blank');
@@ -410,7 +399,7 @@ function saveGame() {
 }
 
 function loadGame() {
-  cekStatusJadwal();
+  cekStatusBayar();
 
   let savedData = localStorage.getItem("capsah");
   if (!savedData) {
@@ -439,7 +428,7 @@ function loadGame() {
 }
 
 function resetGame() {
-  if (confirm("Yakin mau reset semua data skor & jadwal?")) {
+  if (confirm("Yakin mau reset semua data skor & jadwal bayar?")) {
     localStorage.removeItem("capsah");
     localStorage.removeItem("capsah_play_time");
     localStorage.removeItem("capsah_pay_date");
@@ -454,4 +443,9 @@ loadGame();
   © 2026 Capsah Scoreboard. All rights reserved.
   <div style="margin-top: 8px;">
     <a href="https://hits.sh/capsah-scoreboard.app/" target="_blank">
-      <img src="
+      <img src="https://hits.sh/capsah-scoreboard.app.svg?style=flat-square&label=Pengunjung&color=00e676&labelColor=1b2430" alt="Visitor Count">
+    </a>
+  </div>
+</footer>
+</body>
+</html>
