@@ -278,12 +278,20 @@ location.reload()
 
 loadGame()
 
+fetch('https://api.countapi.xyz/hit/capsah-scoreboard/visits')
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('visitor-count').innerText = data.value.toLocaleString('id-ID');
+    }).catch(() => {
+      document.getElementById('visitor-count').innerText = '-';
+    });
+  
 </script>
-  ---
+ <footer class="footer">
+  © 2026 Capsah Scoreboard. All rights reserved. 
+  <br>
+  <span>👁️ Pengunjung: <span id="visitor-count">...</span></span>
+</footer>
 
-<p align="center">
-  <img src="https://komarev.com/ghpvc/?username=USERNAME_GITHUB_ANDA&color=00e676&style=flat-square&label=Visitors" alt="Visitor Count" />
-</p>
-<footer class="footer">© 2026 Capsah Scoreboard. All rights reserved.</footer>
 </body>
 </html>
