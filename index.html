@@ -40,24 +40,26 @@ input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;
 }
 .btn-share:hover{background:#20ba5a;}
 
-/* Styling Topbar & Info Pembayaran */
+/* Styling Topbar & Info Jadwal */
 .topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;background:#1b2430;padding:12px 15px;border-radius:10px;margin-bottom:20px;gap:10px;}
 .mata-group{display:flex;align-items:center;gap:8px;}
-.payment-info-box{
+.schedule-info-box{
   text-align:center;
   background:#1b2430;
   border:1px solid #334155;
   padding:10px 15px;
   border-radius:8px;
-  max-width:500px;
+  max-width:600px;
   margin:0 auto 20px auto;
   font-size:0.95rem;
   display:flex;
-  justify-content:center;
+  justify-content:space-between;
   align-items:center;
-  gap:10px;
+  gap:15px;
+  flex-wrap:wrap;
 }
-.btn-edit-date{background:#334155;color:white;padding:4px 8px;font-size:0.75rem;margin:0;}
+.schedule-details{display:flex;flex-direction:column;gap:4px;text-align:left;}
+.btn-edit-date{background:#334155;color:white;padding:6px 12px;font-size:0.8rem;margin:0;}
 
 /* Styling Popup / Modal Sebelum Masuk */
 .modal-overlay{
@@ -76,19 +78,21 @@ input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;
   border:1px solid #334155;
   padding:25px;
   border-radius:12px;
-  max-width:400px;
+  max-width:420px;
   width:100%;
-  text-align:center;
+  text-align:left;
   box-shadow:0 10px 25px rgba(0,0,0,0.5);
 }
-.modal-box h2{margin-top:0;color:#00e676;}
-.modal-box p{color:#cbd5e1;font-size:0.95rem;margin-bottom:20px;}
-.modal-box input[type="date"]{
+.modal-box h2{margin-top:0;color:#00e676;text-align:center;}
+.modal-box p{color:#cbd5e1;font-size:0.95rem;margin-bottom:15px;}
+.modal-box label{font-size:0.85rem;color:#94a3b8;display:block;margin-bottom:4px;}
+.modal-box input{
   width:100%;
-  padding:12px;
-  font-size:1rem;
-  margin-bottom:20px;
+  padding:10px;
+  font-size:0.95rem;
+  margin-bottom:15px;
   color-scheme:dark;
+  text-align:left;
 }
 .btn-submit-date{
   background:#00e676;
@@ -97,6 +101,9 @@ input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;
   padding:12px;
   font-size:1rem;
   margin:0;
+  font-weight:bold;
+  border-radius:6px;
+  cursor:pointer;
 }
 .btn-submit-date:hover{background:#00c853;}
 </style>
@@ -104,13 +111,18 @@ input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;
 
 <body>
 
-<!-- POPUP / NOTIFIKASI JADWAL PEMBAYARAN -->
-<div id="paymentModal" class="modal-overlay">
+<!-- POPUP / MODAL JADWAL MAIN & BAYAR -->
+<div id="scheduleModal" class="modal-overlay">
   <div class="modal-box">
-    <h2>📅 Jadwal Pembayaran</h2>
-    <p>Sebelum mulai bermain, tentukan dulu tanggal, bulan, dan tahun pembayarannya:</p>
-    <input type="date" id="paymentDateInput" required>
-    <button class="btn-submit-date" onclick="simpanTanggalBayar()">Mulai Permainan</button>
+    <h2>Pengaturan Jadwal Main</h2>
+    
+    <label for="modalPlayInput">Jadwal Main (Tanggal & Jam):</label>
+    <input type="datetime-local" id="modalPlayInput" required>
+
+    <label for="modalPayInput">Jadwal Batas Bayar / Tagihan:</label>
+    <input type="date" id="modalPayInput" required>
+
+    <button class="btn-submit-date" onclick="simpanJadwal()">Mulai Permainan</button>
   </div>
 </div>
 
@@ -120,10 +132,13 @@ input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;
 
 <h1>CAPSAH SCOREBOARD</h1>
 
-<!-- TAMPILAN INFORMASI PEMBAYARAN TEPAT DI BAWAH JUDUL -->
-<div class="payment-info-box" id="paymentInfoBox" style="display:none;">
-  <span>Pembayaran tanggal: <strong id="displayPaymentDate" style="color:#00e676;">-</strong></span>
-  <button class="btn-edit-date" onclick="bukaModalBayar()">Ubah</button>
+<!-- TAMPILAN INFORMASI JADWAL DI BAWAH JUDUL -->
+<div class="schedule-info-box" id="scheduleInfoBox" style="display:none;">
+  <div class="schedule-details">
+    <span>🎮 <strong>Jadwal Main:</strong> <span id="displayPlayDate" style="color:#00e676;">-</span></span>
+    <span>💸 <strong>Jadwal Bayar:</strong> <span id="displayPayDate" style="color:#ff5252;">-</span></span>
+  </div>
+  <button class="btn-edit-date" onclick="bukaModalJadwal()">Ubah Jadwal</button>
 </div>
 
 <div class="topbar">
@@ -143,47 +158,67 @@ input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;
 let players = 4;
 let rounds = 25;
 
-// --- FUNGSI FORMAT TANGGAL INDONESIA ---
-function formatTanggalIndo(dateString) {
+// --- FORMAT TANGGAL & JAM ---
+function formatDateTimeIndo(dateTimeString) {
+  if (!dateTimeString) return "-";
+  const opsi = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+  const dateObj = new Date(dateTimeString);
+  return dateObj.toLocaleDateString('id-ID', opsi) + " WIB";
+}
+
+function formatDateIndo(dateString) {
   if (!dateString) return "-";
   const opsi = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
   const dateObj = new Date(dateString + "T00:00:00");
   return dateObj.toLocaleDateString('id-ID', opsi);
 }
 
-function simpanTanggalBayar() {
-  const inputVal = document.getElementById("paymentDateInput").value;
-  if (!inputVal) {
-    alert("Silakan pilih tanggal, bulan, dan tahun pembayaran terlebih dahulu!");
+function simpanJadwal() {
+  const playVal = document.getElementById("modalPlayInput").value;
+  const payVal = document.getElementById("modalPayInput").value;
+
+  if (!playVal || !payVal) {
+    alert("Mohon lengkapi Jadwal Main dan Jadwal Bayar terlebih dahulu!");
     return;
   }
-  localStorage.setItem("capsah_payment_date", inputVal);
-  tampilkanInfoBayar(inputVal);
-  document.getElementById("paymentModal").style.display = "none";
+
+  localStorage.setItem("capsah_play_time", playVal);
+  localStorage.setItem("capsah_pay_date", payVal);
+
+  tampilkanInfoJadwal(playVal, payVal);
+  document.getElementById("scheduleModal").style.display = "none";
 }
 
-function bukaModalBayar() {
-  const savedDate = localStorage.getItem("capsah_payment_date");
-  if (savedDate) {
-    document.getElementById("paymentDateInput").value = savedDate;
-  }
-  document.getElementById("paymentModal").style.display = "flex";
+function bukaModalJadwal() {
+  const savedPlay = localStorage.getItem("capsah_play_time");
+  const savedPay = localStorage.getItem("capsah_pay_date");
+
+  if (savedPlay) document.getElementById("modalPlayInput").value = savedPlay;
+  if (savedPay) document.getElementById("modalPayInput").value = savedPay;
+
+  document.getElementById("scheduleModal").style.display = "flex";
 }
 
-function tampilkanInfoBayar(dateString) {
-  document.getElementById("displayPaymentDate").innerText = formatTanggalIndo(dateString);
-  document.getElementById("paymentInfoBox").style.display = "flex";
+function tampilkanInfoJadwal(playVal, payVal) {
+  document.getElementById("displayPlayDate").innerText = formatDateTimeIndo(playVal);
+  document.getElementById("displayPayDate").innerText = formatDateIndo(payVal);
+  document.getElementById("scheduleInfoBox").style.display = "flex";
 }
 
-function cekStatusPembayaran() {
-  const savedDate = localStorage.getItem("capsah_payment_date");
-  if (savedDate) {
-    document.getElementById("paymentModal").style.display = "none";
-    tampilkanInfoBayar(savedDate);
+function cekStatusJadwal() {
+  const savedPlay = localStorage.getItem("capsah_play_time");
+  const savedPay = localStorage.getItem("capsah_pay_date");
+
+  if (savedPlay && savedPay) {
+    document.getElementById("scheduleModal").style.display = "none";
+    tampilkanInfoJadwal(savedPlay, savedPay);
   } else {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById("paymentDateInput").value = today;
-    document.getElementById("paymentModal").style.display = "flex";
+    // Set default ke waktu sekarang
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById("modalPlayInput").value = now.toISOString().slice(0, 16);
+    document.getElementById("modalPayInput").value = new Date().toISOString().split('T')[0];
+    document.getElementById("scheduleModal").style.display = "flex";
   }
 }
 
@@ -240,11 +275,14 @@ function buatTabel(id, start=[0,0,0,0], names=["P1","P2","P3","P4"], hasStart=fa
   document.getElementById("tables").appendChild(div);
 }
 
-// --- FUNGSI BAGIKAN HASIL KE WHATSAPP ---
+// --- FUNGSI BAGIKAN KE WHATSAPP (LENGKAP DUA JADWAL) ---
 function bagikanKeWA(id) {
   let table = document.getElementById("table" + id);
-  let savedDate = localStorage.getItem("capsah_payment_date");
-  let tanggalStr = formatTanggalIndo(savedDate);
+  let savedPlay = localStorage.getItem("capsah_play_time");
+  let savedPay = localStorage.getItem("capsah_pay_date");
+  
+  let jadwalMainStr = formatDateTimeIndo(savedPlay);
+  let jadwalBayarStr = formatDateIndo(savedPay);
   let mataVal = document.getElementById("mata").value;
 
   let dataPemain = [];
@@ -255,11 +293,11 @@ function bagikanKeWA(id) {
     dataPemain.push({ nama, totalPoin, idrText });
   }
 
-  // Urutkan dari poin terbesar ke terkecil (ranking)
   dataPemain.sort((a, b) => b.totalPoin - a.totalPoin);
 
   let pesan = `🃏 *HASIL CAPSAH SCOREBOARD (SET ${id + 1})* 🃏\n`;
-  pesan += `🗓️ Pembayaran: ${tanggalStr}\n`;
+  pesan += `🎮 Jadwal Main: ${jadwalMainStr}\n`;
+  pesan += `💸 Batas Bayar: *${jadwalBayarStr}*\n`;
   pesan += `💰 Nilai Mata: Rp ${parseInt(mataVal).toLocaleString("id-ID")}\n\n`;
   pesan += `*Klasemen Sementara:*\n`;
 
@@ -372,7 +410,7 @@ function saveGame() {
 }
 
 function loadGame() {
-  cekStatusPembayaran();
+  cekStatusJadwal();
 
   let savedData = localStorage.getItem("capsah");
   if (!savedData) {
@@ -401,9 +439,10 @@ function loadGame() {
 }
 
 function resetGame() {
-  if (confirm("Yakin mau reset semua data skor & tanggal pembayaran?")) {
+  if (confirm("Yakin mau reset semua data skor & jadwal?")) {
     localStorage.removeItem("capsah");
-    localStorage.removeItem("capsah_payment_date");
+    localStorage.removeItem("capsah_play_time");
+    localStorage.removeItem("capsah_pay_date");
     location.reload();
   }
 }
@@ -415,9 +454,4 @@ loadGame();
   © 2026 Capsah Scoreboard. All rights reserved.
   <div style="margin-top: 8px;">
     <a href="https://hits.sh/capsah-scoreboard.app/" target="_blank">
-      <img src="https://hits.sh/capsah-scoreboard.app.svg?style=flat-square&label=Pengunjung&color=00e676&labelColor=1b2430" alt="Visitor Count">
-    </a>
-  </div>
-</footer>
-</body>
-</html>
+      <img src="
