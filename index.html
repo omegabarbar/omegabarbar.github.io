@@ -13,13 +13,34 @@ button{padding:10px 14px;border:none;border-radius:6px;margin:5px;cursor:pointer
 .kick{background:orange;color:#111827;}
 .reset{background:red;color:white;}
 .board{display:flex;flex-direction:column;gap:20px;}
-.tableBox{background:#1b2430;padding:10px;border-radius:10px;overflow-x:auto;}
+.tableBox{background:#1b2430;padding:12px;border-radius:10px;overflow-x:auto;}
 input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;padding:6px;text-align:center;}
 .plus{color:#00e676;font-weight:bold;}
 .minus{color:#ff5252;font-weight:bold;}
 .footer{padding:20px 10px;text-align:center;color:#94a3b8;font-size:0.95rem;}
 
-/* Styling Topbar & Info Pembayaran di Bawah Judul */
+/* Header Set & Tombol Share WA */
+.table-header-flex{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.table-header-flex h3{margin:0;}
+.btn-share{
+  background:#25D366;
+  color:white;
+  padding:6px 12px;
+  font-size:0.85rem;
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+.btn-share:hover{background:#20ba5a;}
+
+/* Styling Topbar & Info Pembayaran */
 .topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;background:#1b2430;padding:12px 15px;border-radius:10px;margin-bottom:20px;gap:10px;}
 .mata-group{display:flex;align-items:center;gap:8px;}
 .payment-info-box{
@@ -171,7 +192,15 @@ function buatTabel(id, start=[0,0,0,0], names=["P1","P2","P3","P4"], hasStart=fa
   let div = document.createElement("div");
   div.className = "tableBox";
 
-  let html = `<h3>SET ${id+1}</h3><table id="table${id}">`;
+  let html = `
+    <div class="table-header-flex">
+      <h3>SET ${id+1}</h3>
+      <button class="btn-share" onclick="bagikanKeWA(${id})">
+        💬 Share ke WhatsApp
+      </button>
+    </div>
+    <table id="table${id}">
+  `;
 
   html += `<tr><th>Rnd</th>`;
   for (let i = 0; i < players; i++) {
@@ -209,6 +238,40 @@ function buatTabel(id, start=[0,0,0,0], names=["P1","P2","P3","P4"], hasStart=fa
 
   div.innerHTML = html;
   document.getElementById("tables").appendChild(div);
+}
+
+// --- FUNGSI BAGIKAN HASIL KE WHATSAPP ---
+function bagikanKeWA(id) {
+  let table = document.getElementById("table" + id);
+  let savedDate = localStorage.getItem("capsah_payment_date");
+  let tanggalStr = formatTanggalIndo(savedDate);
+  let mataVal = document.getElementById("mata").value;
+
+  let dataPemain = [];
+  for (let i = 0; i < players; i++) {
+    let nama = table.rows[0].cells[i + 1].children[0].value || `P${i+1}`;
+    let totalPoin = parseInt(document.getElementById(`p${id}_${i}`).innerText) || 0;
+    let idrText = document.getElementById(`b${id}_${i}`).innerText;
+    dataPemain.push({ nama, totalPoin, idrText });
+  }
+
+  // Urutkan dari poin terbesar ke terkecil (ranking)
+  dataPemain.sort((a, b) => b.totalPoin - a.totalPoin);
+
+  let pesan = `🃏 *HASIL CAPSAH SCOREBOARD (SET ${id + 1})* 🃏\n`;
+  pesan += `🗓️ Pembayaran: ${tanggalStr}\n`;
+  pesan += `💰 Nilai Mata: Rp ${parseInt(mataVal).toLocaleString("id-ID")}\n\n`;
+  pesan += `*Klasemen Sementara:*\n`;
+
+  let medali = ["🥇", "🥈", "🥉", "💀"];
+  dataPemain.forEach((p, idx) => {
+    pesan += `${medali[idx]} *${p.nama}* : ${p.totalPoin} poin (${p.idrText})\n`;
+  });
+
+  pesan += `\n_Dicatat otomatis via Capsah Scoreboard_ 🚀`;
+
+  let urlWA = `https://api.whatsapp.com/send?text=${encodeURIComponent(pesan)}`;
+  window.open(urlWA, '_blank');
 }
 
 function hitung(id) {
