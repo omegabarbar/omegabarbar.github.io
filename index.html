@@ -7,31 +7,108 @@
 
 <style>
 *{box-sizing:border-box;}
-body{font-family:Arial;background:#0f1720;color:white;padding:15px;margin:0;}
-h1{text-align:center;}
-button{padding:10px;border:none;border-radius:6px;margin:5px;cursor:pointer;}
-.kick{background:orange;}
+body{font-family:Arial, sans-serif;background:#0f1720;color:white;padding:15px;margin:0;}
+h1{text-align:center;margin-top:45px;margin-bottom:10px;}
+button{padding:10px 14px;border:none;border-radius:6px;margin:5px;cursor:pointer;font-weight:bold;}
+.kick{background:orange;color:#111827;}
 .reset{background:red;color:white;}
 .board{display:flex;flex-direction:column;gap:20px;}
 .tableBox{background:#1b2430;padding:10px;border-radius:10px;overflow-x:auto;}
-input{background:#111827;color:white;border:none;text-align:center;}
-.plus{color:#00e676;}
-.minus{color:#ff5252;}
-.footer{padding:16px 10px;text-align:center;color:#94a3b8;font-size:0.95rem;}
+input{background:#111827;color:white;border:1px solid #334155;border-radius:4px;padding:6px;text-align:center;}
+.plus{color:#00e676;font-weight:bold;}
+.minus{color:#ff5252;font-weight:bold;}
+.footer{padding:20px 10px;text-align:center;color:#94a3b8;font-size:0.95rem;}
+
+/* Styling Topbar & Info Pembayaran di Bawah Judul */
+.topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;background:#1b2430;padding:12px 15px;border-radius:10px;margin-bottom:20px;gap:10px;}
+.mata-group{display:flex;align-items:center;gap:8px;}
+.payment-info-box{
+  text-align:center;
+  background:#1b2430;
+  border:1px solid #334155;
+  padding:10px 15px;
+  border-radius:8px;
+  max-width:500px;
+  margin:0 auto 20px auto;
+  font-size:0.95rem;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+}
+.btn-edit-date{background:#334155;color:white;padding:4px 8px;font-size:0.75rem;margin:0;}
+
+/* Styling Popup / Modal Sebelum Masuk */
+.modal-overlay{
+  position:fixed;
+  top:0;left:0;width:100%;height:100%;
+  background:rgba(15, 23, 32, 0.95);
+  backdrop-filter:blur(5px);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+  padding:15px;
+}
+.modal-box{
+  background:#1b2430;
+  border:1px solid #334155;
+  padding:25px;
+  border-radius:12px;
+  max-width:400px;
+  width:100%;
+  text-align:center;
+  box-shadow:0 10px 25px rgba(0,0,0,0.5);
+}
+.modal-box h2{margin-top:0;color:#00e676;}
+.modal-box p{color:#cbd5e1;font-size:0.95rem;margin-bottom:20px;}
+.modal-box input[type="date"]{
+  width:100%;
+  padding:12px;
+  font-size:1rem;
+  margin-bottom:20px;
+  color-scheme:dark;
+}
+.btn-submit-date{
+  background:#00e676;
+  color:#0f1720;
+  width:100%;
+  padding:12px;
+  font-size:1rem;
+  margin:0;
+}
+.btn-submit-date:hover{background:#00c853;}
 </style>
 </head>
 
 <body>
+
+<!-- POPUP / NOTIFIKASI JADWAL PEMBAYARAN -->
+<div id="paymentModal" class="modal-overlay">
+  <div class="modal-box">
+    <h2>📅 Jadwal Pembayaran</h2>
+    <p>Sebelum mulai bermain, tentukan dulu tanggal, bulan, dan tahun pembayarannya:</p>
+    <input type="date" id="paymentDateInput" required>
+    <button class="btn-submit-date" onclick="simpanTanggalBayar()">Mulai Permainan</button>
+  </div>
+</div>
 
 <a href="main.html" style="position: absolute; top: 10px; right: 10px; text-decoration: none;">
   <button style="padding: 10px 15px; background: #53c8ef; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">← Back to Portfolio</button>
 </a>
 
 <h1>CAPSAH SCOREBOARD</h1>
+
+<!-- TAMPILAN INFORMASI PEMBAYARAN TEPAT DI BAWAH JUDUL -->
+<div class="payment-info-box" id="paymentInfoBox" style="display:none;">
+  <span>Pembayaran tanggal: <strong id="displayPaymentDate" style="color:#00e676;">-</strong></span>
+  <button class="btn-edit-date" onclick="bukaModalBayar()">Ubah</button>
+</div>
+
 <div class="topbar">
   <div class="mata-group">
-    <label for="mata">MATA</label>
-    <input id="mata" type="number" value="5000" oninput="saveGame()">
+    <label for="mata"><strong>MATA (Rp)</strong></label>
+    <input id="mata" type="number" value="5000" oninput="updateSemuaHitung()">
   </div>
   <div class="action-buttons">
     <button class="kick" onclick="kick()">KICK</button>
@@ -42,250 +119,242 @@ input{background:#111827;color:white;border:none;text-align:center;}
 <div id="tables" class="board"></div>
 
 <script>
+let players = 4;
+let rounds = 25;
 
-let players=4
-let rounds=25
+// --- FUNGSI FORMAT TANGGAL INDONESIA ---
+function formatTanggalIndo(dateString) {
+  if (!dateString) return "-";
+  const opsi = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateObj = new Date(dateString + "T00:00:00");
+  return dateObj.toLocaleDateString('id-ID', opsi);
+}
 
-function getTableData(){
-let tables=document.querySelectorAll("table")
-let data=[]
-tables.forEach((table,setIdx)=>{
-let set={
-names:[],
-start:[],
-scores:[]
+function simpanTanggalBayar() {
+  const inputVal = document.getElementById("paymentDateInput").value;
+  if (!inputVal) {
+    alert("Silakan pilih tanggal, bulan, dan tahun pembayaran terlebih dahulu!");
+    return;
+  }
+  localStorage.setItem("capsah_payment_date", inputVal);
+  tampilkanInfoBayar(inputVal);
+  document.getElementById("paymentModal").style.display = "none";
 }
-let hasStart = table.rows[1] && table.rows[1].cells[0].innerText==="0" && table.rows[1].cells[1].children[0].readOnly
-for(let i=1;i<=players;i++){
-set.names.push(table.rows[0].cells[i].children[0].value)
+
+function bukaModalBayar() {
+  const savedDate = localStorage.getItem("capsah_payment_date");
+  if (savedDate) {
+    document.getElementById("paymentDateInput").value = savedDate;
+  }
+  document.getElementById("paymentModal").style.display = "flex";
 }
-if(hasStart){
-  for(let i=1;i<=players;i++){
-    set.start.push(table.rows[1].cells[i].children[0].value)
+
+function tampilkanInfoBayar(dateString) {
+  document.getElementById("displayPaymentDate").innerText = formatTanggalIndo(dateString);
+  document.getElementById("paymentInfoBox").style.display = "flex";
+}
+
+function cekStatusPembayaran() {
+  const savedDate = localStorage.getItem("capsah_payment_date");
+  if (savedDate) {
+    document.getElementById("paymentModal").style.display = "none";
+    tampilkanInfoBayar(savedDate);
+  } else {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("paymentDateInput").value = today;
+    document.getElementById("paymentModal").style.display = "flex";
   }
 }
-for(let round=1;round<=rounds;round++){
-let roundData=[]
-let rowIndex = round + (hasStart ? 1 : 0)
-for(let p=1;p<=players;p++){
-let val=table.rows[rowIndex].cells[p].children[0].value
-roundData.push(val===""?0:parseInt(val))
-}
-set.scores.push(roundData)
-}
-data.push(set)
-})
-return data
-}
 
-function buatTabel(id,start=[0,0,0,0],names=["P1","P2","P3","P4"],hasStart=false){
+// --- FUNGSI UTAMA SCOREBOARD ---
+function buatTabel(id, start=[0,0,0,0], names=["P1","P2","P3","P4"], hasStart=false) {
+  let div = document.createElement("div");
+  div.className = "tableBox";
 
-let div=document.createElement("div")
-div.className="tableBox"
+  let html = `<h3>SET ${id+1}</h3><table id="table${id}">`;
 
-let html=`<h3>SET ${id+1}</h3><table id="table${id}">`
-
-html+=`<tr><th>Rnd</th>`
-for(let i=0;i<players;i++){
-html+=`<th><input value="${names[i]}" onchange="hitung(${id})"></th>`
-}
-html+=`</tr>`
-
-if(hasStart){
-  html+=`<tr><td>0</td>`
-  for(let i=0;i<players;i++){
-    html+=`<td><input value="${start[i]}" readonly></td>`
+  html += `<tr><th>Rnd</th>`;
+  for (let i = 0; i < players; i++) {
+    html += `<th><input value="${names[i]}" onchange="hitung(${id})"></th>`;
   }
-  html+=`</tr>`
-}
+  html += `</tr>`;
 
-for(let r=1;r<=rounds;r++){
-html+=`<tr><td>${r}</td>`
-for(let p=0;p<players;p++){
-html+=`<td><input type="number" oninput="hitung(${id});saveGame()"></td>`
-}
-html+=`</tr>`
-}
-
-html+=`<tr><td>Total</td>`
-for(let i=0;i<players;i++){
-html+=`<td id="p${id}_${i}">0</td>`
-}
-html+=`</tr>`
-
-html+=`<tr><td>IDR</td>`
-for(let i=0;i<players;i++){
-html+=`<td id="b${id}_${i}">Rp 0</td>`
-}
-html+=`</tr></table>`
-
-div.innerHTML=html
-document.getElementById("tables").appendChild(div)
-
-}
-
-function hitung(id){
-
-let table=document.getElementById("table"+id)
-let total=[0,0,0,0]
-
-for(let i=1;i<table.rows.length-2;i++){
-
-for(let j=1;j<=players;j++){
-
-let val=table.rows[i].cells[j].children[0].value
-if(val!="") total[j-1]+=parseInt(val)
-
-}
-
-}
-
-let mata=parseInt(document.getElementById("mata").value)||0
-
-for(let i=0;i<players;i++){
-
-document.getElementById(`p${id}_${i}`).innerText=total[i]
-
-let bayar=0
-
-for(let j=0;j<players;j++){
-if(i!=j){
-bayar+=(total[j]-total[i])
-}
-}
-
-bayar*=mata
-
-let cell=document.getElementById(`b${id}_${i}`)
-cell.innerText="Rp "+bayar.toLocaleString("id-ID")
-cell.className=bayar<0?"minus":"plus"
-
-}
-
-saveGame()
-
-}
-
-function kick(){
-
-let tables=document.querySelectorAll("table")
-let last=tables[tables.length-1]
-
-let totals=[]
-let names=[]
-
-for(let i=0;i<players;i++){
-  totals.push(parseInt(last.querySelector(`#p${tables.length-1}_${i}`).innerText))
-  names.push(last.rows[0].cells[i+1].children[0].value)
-}
-
-buatTabel(tables.length,totals,names,true)
-
-hitung(tables.length)
-saveGame()
-
-}
-
-function saveGame(){
-
-let tables=document.querySelectorAll("table")
-let gameData={
-mata:document.getElementById("mata").value,
-sets:[]
-}
-
-tables.forEach((table,setIdx)=>{
-let set={
-names:[],
-start:[],
-scores:[]
-}
-let hasStart = table.rows[1] && table.rows[1].cells[0].innerText==="0" && table.rows[1].cells[1].children[0].readOnly
-
-for(let i=1;i<=players;i++){
-set.names.push(table.rows[0].cells[i].children[0].value)
-}
-
-if(hasStart){
-  for(let i=1;i<=players;i++){
-    set.start.push(table.rows[1].cells[i].children[0].value)
+  if (hasStart) {
+    html += `<tr><td>0</td>`;
+    for (let i = 0; i < players; i++) {
+      html += `<td><input value="${start[i]}" readonly style="background:#0f1720;color:#94a3b8;"></td>`;
+    }
+    html += `</tr>`;
   }
-} else {
-  set.start=[0,0,0,0]
+
+  for (let r = 1; r <= rounds; r++) {
+    html += `<tr><td>${r}</td>`;
+    for (let p = 0; p < players; p++) {
+      html += `<td><input type="number" oninput="hitung(${id});saveGame()"></td>`;
+    }
+    html += `</tr>`;
+  }
+
+  html += `<tr><td><strong>Total</strong></td>`;
+  for (let i = 0; i < players; i++) {
+    html += `<td id="p${id}_${i}"><strong>0</strong></td>`;
+  }
+  html += `</tr>`;
+
+  html += `<tr><td><strong>IDR</strong></td>`;
+  for (let i = 0; i < players; i++) {
+    html += `<td id="b${id}_${i}">Rp 0</td>`;
+  }
+  html += `</tr></table>`;
+
+  div.innerHTML = html;
+  document.getElementById("tables").appendChild(div);
 }
 
-for(let round=1;round<=rounds;round++){
-let roundScores=[]
-for(let p=1;p<=players;p++){
-let rowIndex = round + (hasStart ? 1 : 0)
-let val=table.rows[rowIndex].cells[p].children[0].value
-roundScores.push(val)  
-}
-set.scores.push(roundScores)
-}
-gameData.sets.push(set)
-})
+function hitung(id) {
+  let table = document.getElementById("table" + id);
+  let total = [0, 0, 0, 0];
 
-localStorage.setItem("capsah",JSON.stringify(gameData))
+  for (let i = 1; i < table.rows.length - 2; i++) {
+    for (let j = 1; j <= players; j++) {
+      let val = table.rows[i].cells[j].children[0].value;
+      if (val != "") total[j - 1] += parseInt(val);
+    }
+  }
 
-}
+  let mata = parseInt(document.getElementById("mata").value) || 0;
 
-function loadGame(){
+  for (let i = 0; i < players; i++) {
+    document.getElementById(`p${id}_${i}`).innerHTML = `<strong>${total[i]}</strong>`;
 
-let savedData=localStorage.getItem("capsah")
+    let bayar = 0;
+    for (let j = 0; j < players; j++) {
+      if (i != j) {
+        bayar += (total[j] - total[i]);
+      }
+    }
 
-if(!savedData){
-buatTabel(0)
-return
-}
+    bayar *= mata;
 
-let gameData=JSON.parse(savedData)
-document.getElementById("mata").value=gameData.mata
+    let cell = document.getElementById(`b${id}_${i}`);
+    cell.innerText = "Rp " + bayar.toLocaleString("id-ID");
+    cell.className = bayar < 0 ? "minus" : "plus";
+  }
 
-
-gameData.sets.forEach((set,idx)=>{
-let hasStart = idx > 0
-let start = hasStart ? set.start : [0,0,0,0]
-buatTabel(idx,start,set.names,hasStart)
-
-
-let table=document.getElementById("table"+idx)
-set.scores.forEach((roundScores,roundIdx)=>{
-let rowIndex = roundIdx + 1 + (hasStart ? 1 : 0)
-for(let p=0;p<players;p++){
-table.rows[rowIndex].cells[p+1].children[0].value=roundScores[p]
-}
-})
-
-
-for(let i=0;i<players;i++){
-document.getElementById(`p${idx}_${i}`).innerText="0"
-document.getElementById(`b${idx}_${i}`).innerText="Rp 0"
+  saveGame();
 }
 
-
-hitung(idx)
-})
-
+function updateSemuaHitung() {
+  let tables = document.querySelectorAll("table");
+  tables.forEach((_, idx) => hitung(idx));
 }
 
-function resetGame(){
-if(confirm("Yakin mau reset semua data?")){
-localStorage.clear()
-location.reload()
-}
+function kick() {
+  let tables = document.querySelectorAll("table");
+  let last = tables[tables.length - 1];
+
+  let totals = [];
+  let names = [];
+
+  for (let i = 0; i < players; i++) {
+    totals.push(parseInt(last.querySelector(`#p${tables.length - 1}_${i}`).innerText));
+    names.push(last.rows[0].cells[i + 1].children[0].value);
+  }
+
+  buatTabel(tables.length, totals, names, true);
+  hitung(tables.length);
+  saveGame();
 }
 
-loadGame()
+function saveGame() {
+  let tables = document.querySelectorAll("table");
+  let gameData = {
+    mata: document.getElementById("mata").value,
+    sets: []
+  };
+
+  tables.forEach((table) => {
+    let set = {
+      names: [],
+      start: [],
+      scores: []
+    };
+    let hasStart = table.rows[1] && table.rows[1].cells[0].innerText === "0" && table.rows[1].cells[1].children[0].readOnly;
+
+    for (let i = 1; i <= players; i++) {
+      set.names.push(table.rows[0].cells[i].children[0].value);
+    }
+
+    if (hasStart) {
+      for (let i = 1; i <= players; i++) {
+        set.start.push(table.rows[1].cells[i].children[0].value);
+      }
+    } else {
+      set.start = [0, 0, 0, 0];
+    }
+
+    for (let round = 1; round <= rounds; round++) {
+      let roundScores = [];
+      for (let p = 1; p <= players; p++) {
+        let rowIndex = round + (hasStart ? 1 : 0);
+        let val = table.rows[rowIndex].cells[p].children[0].value;
+        roundScores.push(val);
+      }
+      set.scores.push(roundScores);
+    }
+    gameData.sets.push(set);
+  });
+
+  localStorage.setItem("capsah", JSON.stringify(gameData));
+}
+
+function loadGame() {
+  cekStatusPembayaran();
+
+  let savedData = localStorage.getItem("capsah");
+  if (!savedData) {
+    buatTabel(0);
+    return;
+  }
+
+  let gameData = JSON.parse(savedData);
+  document.getElementById("mata").value = gameData.mata;
+
+  gameData.sets.forEach((set, idx) => {
+    let hasStart = idx > 0;
+    let start = hasStart ? set.start : [0, 0, 0, 0];
+    buatTabel(idx, start, set.names, hasStart);
+
+    let table = document.getElementById("table" + idx);
+    set.scores.forEach((roundScores, roundIdx) => {
+      let rowIndex = roundIdx + 1 + (hasStart ? 1 : 0);
+      for (let p = 0; p < players; p++) {
+        table.rows[rowIndex].cells[p + 1].children[0].value = roundScores[p];
+      }
+    });
+
+    hitung(idx);
+  });
+}
+
+function resetGame() {
+  if (confirm("Yakin mau reset semua data skor & tanggal pembayaran?")) {
+    localStorage.removeItem("capsah");
+    localStorage.removeItem("capsah_payment_date");
+    location.reload();
+  }
+}
+
+loadGame();
 </script>
- <footer class="footer">
+
+<footer class="footer">
   © 2026 Capsah Scoreboard. All rights reserved.
   <div style="margin-top: 8px;">
-    <a href="https://hits.sh/domain-web-anda.com/" target="_blank">
-      <img src="https://hits.sh/domain-web-anda.com.svg?style=flat-square&label=Pengunjung&color=00e676&labelColor=1b2430" alt="Visitor Count">
+    <a href="https://hits.sh/capsah-scoreboard.app/" target="_blank">
+      <img src="https://hits.sh/capsah-scoreboard.app.svg?style=flat-square&label=Pengunjung&color=00e676&labelColor=1b2430" alt="Visitor Count">
     </a>
   </div>
 </footer>
-
 </body>
 </html>
